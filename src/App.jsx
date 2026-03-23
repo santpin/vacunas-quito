@@ -65,7 +65,7 @@ const rawData = [
 const Modal = ({ center, onClose }) => {
   if (!center) return null;
 
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=Centro+de+Salud+${encodeURIComponent(center.name)}+${encodeURIComponent(center.parish)}+Quito+Ecuador`;
+  cconst googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(center.name)}+${encodeURIComponent(center.parish)}+Quito+Ecuador`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
