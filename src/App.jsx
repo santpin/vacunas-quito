@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, MapPin, Clock, Calendar, Shield, Building2, Filter, ChevronRight, Info, X, ExternalLink, Navigation2, CheckCircle2 } from 'lucide-react';
+import { Search, MapPin, Clock, Calendar, Shield, Building2, Filter, ChevronRight, Info, X, ExternalLink, Navigation2, CheckCircle2, Share2, Copy } from 'lucide-react';
 
 const rawData = [
   // DISTRITO 17D03
@@ -144,61 +144,12 @@ const rawData = [
   { code: "002992-2", name: "Mangahuantag (Horario Martes)", type: "PUESTO DE SALUD", district: "17D06", parish: "Puembo", schedule: "8:00 - 14:00", day: "Martes" }
 ];
 
-const Modal = ({ center, onClose }) => {
-  if (!center) return null;
-  const destination = encodeURIComponent(`${center.name} ${center.parish} Quito Ecuador`);
-  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="relative h-32 bg-blue-600 flex items-center justify-center">
-          <Building2 size={48} className="text-white opacity-20 absolute" />
-          <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full transition-colors"><X size={20} /></button>
-          <div className="text-center text-white p-6 relative">
-            <h2 className="text-2xl font-bold leading-tight">{center.name}</h2>
-            <p className="text-blue-100 text-sm opacity-90">{center.type}</p>
-          </div>
-        </div>
-        <div className="p-8 space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-              <Calendar className="text-blue-600 mb-2" size={20} />
-              <p className="text-[10px] uppercase font-bold text-slate-400 mb-1 leading-tight">Día Fiebre Amarilla</p>
-              <p className="text-sm font-bold text-blue-700 leading-tight">{center.day}</p>
-            </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-              <Clock className="text-slate-600 mb-2" size={20} />
-              <p className="text-[10px] uppercase font-bold text-slate-400 mb-1 leading-tight">Horario General</p>
-              <p className="text-sm font-bold text-slate-700 leading-tight">{center.schedule}</p>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-              <MapPin className="text-red-500 shrink-0 mt-1" size={24} />
-              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Ubicación</p>
-                <p className="text-sm font-medium text-slate-700">Parroquia {center.parish}, Distrito {center.district}. Quito, Pichincha.</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col gap-3 pt-2">
-            <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-green-100">
-              <Navigation2 size={20} fill="currentColor" /> Trazar Ruta (GPS)
-            </a>
-            <button onClick={onClose} className="w-full py-3 text-slate-400 hover:text-slate-600 font-medium text-sm transition-colors">Cerrar detalles</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedParish, setSelectedParish] = useState('Todas');
   const [weekendOnly, setWeekendOnly] = useState(false);
   const [selectedCenter, setSelectedCenter] = useState(null);
+  const [showCopyAlert, setShowCopyAlert] = useState(false);
 
   const parishes = useMemo(() => {
     const unique = [...new Set(rawData.map(item => item.parish))];
@@ -214,20 +165,62 @@ const App = () => {
     });
   }, [searchTerm, selectedParish, weekendOnly]);
 
+  const handleShare = (center) => {
+    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(center.name + ' ' + center.parish + ' Quito')}`;
+    const message = `🏥 *${center.name}*\n📍 Parroquia: ${center.parish}\n📅 Vacunación Fiebre Amarilla: *${center.day}*\n⏰ Horario: ${center.schedule}\n🗺️ Ver en Mapa: ${mapsLink}\n\n🔗 Consulta más centros aquí: https://vacunas-quito.vercel.app/`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: `Centro de Salud ${center.name}`,
+        text: message,
+        url: 'https://vacunas-quito.vercel.app/'
+      }).catch(console.error);
+    } else {
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+    }
+  };
+
+  const copyInfo = (center) => {
+    const text = `Centro de Salud: ${center.name}\nParroquia: ${center.parish}\nVacunación: ${center.day}\nHorario: ${center.schedule}`;
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    setShowCopyAlert(true);
+    setTimeout(() => setShowCopyAlert(false), 2000);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20">
+      {/* Alerta de Copiado */}
+      {showCopyAlert && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl animate-bounce text-sm font-bold">
+          ¡Información copiada al portapapeles!
+        </div>
+      )}
+
       <header className="bg-blue-600 text-white shadow-xl sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="bg-white p-3 rounded-2xl text-blue-600 shadow-inner shrink-0"><Shield size={36} fill="currentColor" fillOpacity={0.1} /></div>
+              <div className="bg-white p-3 rounded-2xl text-blue-600 shadow-inner shrink-0">
+                <Shield size={36} fill="currentColor" fillOpacity={0.1} />
+              </div>
               <div>
-                <h1 className="text-xl md:text-2xl font-black leading-tight tracking-tight max-w-2xl">Centros de Salud donde se pueden encontrar las vacunas del Esquema Regular</h1>
-                <p className="text-blue-100 text-xs font-medium flex items-center gap-2 mt-2 opacity-80"><MapPin size={14} /> Red de Salud - Quito, Ecuador</p>
+                <h1 className="text-xl md:text-2xl font-black leading-tight tracking-tight max-w-2xl">
+                   Centros de Salud donde se pueden encontrar las vacunas del Esquema Regular
+                </h1>
+                <p className="text-blue-100 text-xs font-medium flex items-center gap-2 mt-2 opacity-80">
+                  <MapPin size={14} /> Red de Salud - Distrito Metropolitano de Quito
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 bg-blue-700/50 backdrop-blur-sm p-1.5 rounded-2xl px-5 text-sm font-bold border border-blue-400/30">
-              <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-glow"></span> {filteredData.length} Puntos activos
+            <div className="flex items-center gap-3 bg-blue-700/50 backdrop-blur-sm p-1.5 rounded-2xl px-5 text-sm font-bold border border-blue-400/30 shrink-0">
+              <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-glow"></span>
+              {filteredData.length} Puntos activos
             </div>
           </div>
         </div>
@@ -240,20 +233,42 @@ const App = () => {
               <label className="block text-xs font-black text-slate-400 uppercase mb-3 ml-1 tracking-widest">Nombre o Código</label>
               <div className="relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-                <input type="text" placeholder="Ej: Calderón..." className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none text-sm font-medium" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                <input 
+                  type="text"
+                  placeholder="Ej: Calderón, 17D03..."
+                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none text-sm font-medium transition-all"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </div>
+
             <div>
               <label className="block text-xs font-black text-slate-400 uppercase mb-3 ml-1 tracking-widest">Zona / Parroquia</label>
               <div className="relative group">
                 <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-                <select className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none appearance-none cursor-pointer text-sm font-medium" value={selectedParish} onChange={(e) => setSelectedParish(e.target.value)}>
+                <select 
+                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none appearance-none cursor-pointer text-sm font-medium"
+                  value={selectedParish}
+                  onChange={(e) => setSelectedParish(e.target.value)}
+                >
                   {parishes.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
             </div>
-            <button onClick={() => setWeekendOnly(!weekendOnly)} className={`flex items-center justify-between gap-3 px-5 py-3.5 rounded-2xl border transition-all ${weekendOnly ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100'}`}>
-              <div className="flex items-center gap-3"><Calendar size={20} /><span className="text-sm font-bold">Atención Fin de Semana</span></div>
+
+            <button 
+              onClick={() => setWeekendOnly(!weekendOnly)}
+              className={`flex items-center justify-between gap-3 px-5 py-3.5 rounded-2xl border transition-all ${
+                weekendOnly 
+                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200' 
+                : 'bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Calendar size={20} />
+                <span className="text-sm font-bold">Atención Fin de Semana</span>
+              </div>
               {weekendOnly && <CheckCircle2 size={20} className="text-blue-200" />}
             </button>
           </div>
@@ -261,46 +276,165 @@ const App = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredData.map((item, index) => (
-            <div key={`${item.code}-${index}`} className="group bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
+            <div 
+              key={`${item.code}-${index}`} 
+              className="group bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col"
+            >
               <div className="p-6 border-b border-slate-50">
                 <div className="flex justify-between items-start mb-4">
-                  <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-3 py-1 rounded-full uppercase tracking-tighter">MSP: {item.code}</span>
-                  <div className={`flex items-center gap-2`}>
+                  <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-3 py-1 rounded-full uppercase tracking-tighter">
+                    MSP: {item.code}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleShare(item); }}
+                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                      title="Compartir"
+                    >
+                      <Share2 size={18} />
+                    </button>
                     {(item.day.toLowerCase().includes('sabado') || item.day.toLowerCase().includes('sábado')) && (
-                      <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-amber-200">SÁBADO</span>
+                      <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-amber-200">
+                        SÁBADO
+                      </span>
                     )}
-                    <div className={`w-3 h-3 rounded-full ${item.type.toLowerCase().includes('tipo c') ? 'bg-purple-400' : item.type.toLowerCase().includes('tipo b') ? 'bg-blue-400' : 'bg-green-400'}`}></div>
+                    <div className={`w-3 h-3 rounded-full ${
+                      item.type.toLowerCase().includes('tipo c') ? 'bg-purple-400' : 
+                      item.type.toLowerCase().includes('tipo b') ? 'bg-blue-400' : 'bg-green-400'
+                    }`}></div>
                   </div>
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-tight mb-1">{item.name}</h3>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">{item.type.replace('CENTRO DE SALUD ', '')}</p>
+                <h3 className="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-tight mb-1">
+                  {item.name}
+                </h3>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">
+                  {item.type.replace('CENTRO DE SALUD ', '')}
+                </p>
               </div>
+
               <div className="p-6 space-y-5 flex-grow">
                 <div className="flex items-center gap-4 text-slate-600">
-                  <div className="bg-slate-50 p-2.5 rounded-xl group-hover:bg-blue-50 transition-colors"><MapPin size={18} className="text-slate-400 group-hover:text-blue-500" /></div>
-                  <div><p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Parroquia</p><p className="text-sm font-bold text-slate-700">{item.parish}</p></div>
+                  <div className="bg-slate-50 p-2.5 rounded-xl group-hover:bg-blue-50 transition-colors">
+                    <MapPin size={18} className="text-slate-400 group-hover:text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Parroquia</p>
+                    <p className="text-sm font-bold text-slate-700">{item.parish}</p>
+                  </div>
                 </div>
+
                 <div className="flex items-center gap-4">
-                  <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600"><Calendar size={18} /></div>
-                  <div><p className="text-[10px] uppercase font-bold text-blue-400 leading-none mb-1">Día Fiebre Amarilla</p><p className="text-sm font-black text-blue-700">{item.day}</p></div>
+                  <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600">
+                    <Calendar size={18} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-blue-400 leading-none mb-1">Día Fiebre Amarilla</p>
+                    <p className="text-sm font-black text-blue-700">{item.day}</p>
+                  </div>
                 </div>
               </div>
-              <button onClick={() => setSelectedCenter(item)} className="w-full py-5 bg-slate-50 group-hover:bg-blue-600 text-slate-400 group-hover:text-white text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all">Ver Detalles y Mapa <ChevronRight size={16} /></button>
+
+              <button 
+                onClick={() => setSelectedCenter(item)}
+                className="w-full py-5 bg-slate-50 group-hover:bg-blue-600 text-slate-400 group-hover:text-white text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+              >
+                Ver Detalles y Mapa <ChevronRight size={16} />
+              </button>
             </div>
           ))}
         </div>
       </main>
 
-      <Modal center={selectedCenter} onClose={() => setSelectedCenter(null)} />
+      {/* Modal de Detalles con función compartir */}
+      {selectedCenter && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="relative h-32 bg-blue-600 flex items-center justify-center">
+              <Building2 size={48} className="text-white opacity-20 absolute" />
+              <button 
+                onClick={() => setSelectedCenter(null)}
+                className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+              <div className="text-center text-white p-6 relative">
+                <h2 className="text-2xl font-bold leading-tight">{selectedCenter.name}</h2>
+                <p className="text-blue-100 text-sm opacity-90">{selectedCenter.type}</p>
+              </div>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <Calendar className="text-blue-600 mb-2" size={20} />
+                  <p className="text-[10px] uppercase font-bold text-slate-400 mb-1 leading-tight">Día Fiebre Amarilla</p>
+                  <p className="text-sm font-bold text-blue-700 leading-tight">{selectedCenter.day}</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <Clock className="text-slate-600 mb-2" size={20} />
+                  <p className="text-[10px] uppercase font-bold text-slate-400 mb-1 leading-tight">Horario General</p>
+                  <p className="text-sm font-bold text-slate-700 leading-tight">{selectedCenter.schedule}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                  <MapPin className="text-red-500 shrink-0 mt-1" size={24} />
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Ubicación Registrada</p>
+                    <p className="text-sm font-medium text-slate-700">Parroquia {selectedCenter.parish}, Distrito {selectedCenter.district}. Quito, Pichincha.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 pt-2">
+                <a 
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedCenter.name + ' ' + selectedCenter.parish + ' Quito Ecuador')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-green-100"
+                >
+                  <Navigation2 size={20} fill="currentColor" />
+                  Trazar Ruta (GPS)
+                </a>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    onClick={() => handleShare(selectedCenter)}
+                    className="flex items-center justify-center gap-2 py-3.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-2xl transition-all border border-blue-100"
+                  >
+                    <Share2 size={18} />
+                    Compartir
+                  </button>
+                  <button 
+                    onClick={() => copyInfo(selectedCenter)}
+                    className="flex items-center justify-center gap-2 py-3.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold rounded-2xl transition-all border border-slate-200"
+                  >
+                    <Copy size={18} />
+                    Copiar Info
+                  </button>
+                </div>
+                
+                <button 
+                  onClick={() => setSelectedCenter(null)}
+                  className="w-full py-3 text-slate-400 hover:text-slate-600 font-medium text-sm transition-colors mt-2"
+                >
+                  Cerrar detalles
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer className="mt-20 py-12 px-4 border-t border-slate-200 text-center md:text-left">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div>
             <h4 className="font-bold text-slate-800 text-lg mb-2">Información de Salud Pública</h4>
-            <p className="text-slate-400 text-xs leading-relaxed max-w-sm">Esta herramienta facilita el acceso a la información oficial de vacunación en Quito. Datos actualizados con la base de datos completa del MSP (133 establecimientos).</p>
+            <p className="text-slate-400 text-xs leading-relaxed max-w-sm">Esta herramienta facilita el acceso a la información oficial de vacunación en Quito. El día indicado se refiere específicamente a la vacuna contra la Fiebre Amarilla.</p>
           </div>
           <div className="px-6 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-black text-slate-400 flex items-center gap-2">
-            <span className="w-2 h-2 bg-green-400 rounded-full"></span> V3.5 BASE COMPLETA
+            <span className="w-2 h-2 bg-green-400 rounded-full"></span> V4.0 COMPARTIR ACTIVADO
           </div>
         </div>
       </footer>
