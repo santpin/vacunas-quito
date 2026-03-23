@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, MapPin, Clock, Calendar, Shield, Hospital, Filter, ChevronRight, Info, X, ExternalLink, Navigation, CheckCircle2 } from 'lucide-react';
+import { Search, MapPin, Clock, Calendar, Shield, Building2, Filter, ChevronRight, Info, X, ExternalLink, Navigation, CheckCircle2 } from 'lucide-react';
 
 const rawData = [
   { code: "001729", name: "Gualea", type: "CENTRO DE SALUD TIPO A", district: "17D03", parish: "Gualea", schedule: "8:00 - 14:00", day: "Lunes" },
@@ -145,7 +145,7 @@ const Modal = ({ center, onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
       <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
         <div className="relative h-32 bg-blue-600 flex items-center justify-center">
-          <Hospital size={48} className="text-white opacity-20 absolute" />
+          <Building2 size={48} className="text-white opacity-20 absolute" />
           <button 
             onClick={onClose}
             className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full transition-colors"
@@ -313,66 +313,81 @@ const App = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredData.map((item, index) => (
-            <div 
-              key={`${item.code}-${item.name}-${index}`} 
-              className="group bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col"
-            >
-              <div className="p-6 border-b border-slate-50">
-                <div className="flex justify-between items-start mb-4">
-                  <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-3 py-1 rounded-full uppercase tracking-tighter">
-                    MSP: {item.code}
-                  </span>
-                  <div className={`flex items-center gap-2`}>
-                    {(item.day.toLowerCase().includes('sabado') || item.day.toLowerCase().includes('sábado')) && (
-                      <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-amber-200">
-                        SÁBADO
-                      </span>
-                    )}
-                    <div className={`w-3 h-3 rounded-full ${
-                      item.type.includes('TIPO C') ? 'bg-purple-400' : 
-                      item.type.includes('TIPO B') ? 'bg-blue-400' : 'bg-green-400'
-                    }`}></div>
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-tight mb-1">
-                  {item.name}
-                </h3>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-                  {item.type.replace('CENTRO DE SALUD ', '')}
-                </p>
-              </div>
-
-              <div className="p-6 space-y-5 flex-grow">
-                <div className="flex items-center gap-4 text-slate-600">
-                  <div className="bg-slate-50 p-2.5 rounded-xl group-hover:bg-blue-50 transition-colors">
-                    <MapPin size={18} className="text-slate-400 group-hover:text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Parroquia</p>
-                    <p className="text-sm font-bold text-slate-700">{item.parish}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600">
-                    <Calendar size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase font-bold text-blue-400 leading-none mb-1">Día Fiebre Amarilla</p>
-                    <p className="text-sm font-black text-blue-700">{item.day}</p>
-                  </div>
-                </div>
-              </div>
-
-              <button 
-                onClick={() => setSelectedCenter(item)}
-                className="w-full py-5 bg-slate-50 group-hover:bg-blue-600 text-slate-400 group-hover:text-white text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+          {filteredData.length > 0 ? (
+            filteredData.map((item, index) => (
+              <div 
+                key={`${item.code}-${index}`} 
+                className="group bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col"
               >
-                Ver Detalles y Mapa <ChevronRight size={16} />
+                <div className="p-6 border-b border-slate-50">
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-3 py-1 rounded-full uppercase tracking-tighter">
+                      MSP: {item.code}
+                    </span>
+                    <div className={`flex items-center gap-2`}>
+                      {(item.day.toLowerCase().includes('sabado') || item.day.toLowerCase().includes('sábado')) && (
+                        <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-amber-200">
+                          SÁBADO
+                        </span>
+                      )}
+                      <div className={`w-3 h-3 rounded-full ${
+                        item.type.includes('TIPO C') ? 'bg-purple-400' : 
+                        item.type.includes('TIPO B') ? 'bg-blue-400' : 'bg-green-400'
+                      }`}></div>
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-tight mb-1">
+                    {item.name}
+                  </h3>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">
+                    {item.type.replace('CENTRO DE SALUD ', '')}
+                  </p>
+                </div>
+
+                <div className="p-6 space-y-5 flex-grow">
+                  <div className="flex items-center gap-4 text-slate-600">
+                    <div className="bg-slate-50 p-2.5 rounded-xl group-hover:bg-blue-50 transition-colors">
+                      <MapPin size={18} className="text-slate-400 group-hover:text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Parroquia</p>
+                      <p className="text-sm font-bold text-slate-700">{item.parish}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600">
+                      <Calendar size={18} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-blue-400 leading-none mb-1">Día Fiebre Amarilla</p>
+                      <p className="text-sm font-black text-blue-700">{item.day}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setSelectedCenter(item)}
+                  className="w-full py-5 bg-slate-50 group-hover:bg-blue-600 text-slate-400 group-hover:text-white text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+                >
+                  Ver Detalles y Mapa <ChevronRight size={16} />
+                </button>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full py-32 text-center bg-white rounded-[40px] border border-dashed border-slate-200">
+              <div className="bg-slate-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
+                <Building2 size={48} />
+              </div>
+              <h3 className="text-2xl font-black text-slate-800 tracking-tight">Sin coincidencias</h3>
+              <button 
+                onClick={() => {setSearchTerm(''); setSelectedParish('Todas'); setWeekendOnly(false);}}
+                className="mt-8 px-8 py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
+              >
+                Restablecer Filtros
               </button>
             </div>
-          ))}
+          )}
         </div>
       </main>
 
@@ -388,7 +403,7 @@ const App = () => {
           </div>
           <div className="flex gap-4">
             <div className="px-6 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-black text-slate-400 flex items-center gap-2">
-              <span className="w-2 h-2 bg-slate-300 rounded-full"></span> V2.8 FIXED KEYS
+              <span className="w-2 h-2 bg-slate-300 rounded-full"></span> V2.9 FINAL
             </div>
           </div>
         </div>
